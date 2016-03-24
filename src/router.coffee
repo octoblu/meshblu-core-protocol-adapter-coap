@@ -1,19 +1,18 @@
-UrlPattern = require 'url-pattern'
 GetStatusHandler = require './handlers/get-status-handler'
+GenericRouter = require './generic-router'
 
 class Router
   constructor: ({@jobManager}) ->
+    @genericRouter = new GenericRouter
+    @statusHandler = new GetStatusHandler {@jobManager}
+
   route: (app) =>
-    app.on 'request', @_doRoute
-    statusHandler = new GetStatusHandler {@jobManager}
+    @_setup app
+    app.get '/status', @statusHandler
 
-    @get '/status', statusHandler
-
-  get: (pattern, target) =>
-    @GET[pattern] = target
-
-  _doRoute: (req, res) =>
-    packet = req._packet
-    @[packet.method.upcase()]
+  _setup: (app) =>
+    app.get = @genericRouter.get
+    app.on 'request', (req, res) =>
+      @genericRouter.route {method: 'GET', uri: 'http://something.com', req, res}
 
 module.exports = Router
