@@ -1,0 +1,87 @@
+_                      = require 'lodash'
+coap                   = require 'coap'
+colors                 = require 'colors'
+redis                  = require 'ioredis'
+RedisNS                = require '@octoblu/redis-ns'
+debug                  = require('debug')('meshblu-core-protocol-adapter-coap:server')
+Router                 = require './router'
+{Pool}                 = require 'generic-pool'
+PooledJobManager       = require 'meshblu-core-pooled-job-manager'
+JobLogger              = require 'job-logger'
+# JobToHttp              = require './helpers/job-to-http'
+PackageJSON            = require '../package.json'
+
+class Server
+  constructor: (options)->
+    {@disableLogging, @port, @aliasServerUri} = options
+    {@redisUri, @namespace, @jobTimeoutSeconds} = options
+    {@connectionPoolMaxConnections} = options
+    {@jobLogRedisUri, @jobLogQueue, @jobLogSampleRate} = options
+    @panic 'missing @jobLogQueue', 2 unless @jobLogQueue?
+    @panic 'missing @jobLogRedisUri', 2 unless @jobLogRedisUri?
+    @panic 'missing @jobLogSampleRate', 2 unless @jobLogSampleRate?
+
+  address: =>
+    port: @server._port
+    address: @server._address
+
+  panic: (message, exitCode, error) =>
+    error ?= new Error('generic error')
+    console.error colors.red message
+    console.error error?.stack
+    process.exit exitCode
+
+  run: (callback) =>
+    app = coap.createServer()
+
+    app.on 'error', (error) =>
+      console.error error
+
+    jobLogger = new JobLogger
+      jobLogQueue: @jobLogQueue
+      sampleRate: @jobLogSampleRate
+      indexPrefix: 'metric:meshblu-core-protocol-adapter-coap'
+      type: 'meshblu-core-protocol-adapter-coap:request'
+      client: redis.createClient(@jobLogRedisUri)
+
+    connectionPool = @_createConnectionPool(maxConnections: @connectionPoolMaxConnections)
+
+    jobManager = new PooledJobManager
+      timeoutSeconds: @jobTimeoutSeconds
+      pool: connectionPool
+      jobLogger: jobLogger
+
+    # jobToHttp = new JobToHttp
+    router = new Router {jobManager}
+    router.route app
+
+    @server = app.listen @port, callback
+
+  stop: (callback) =>
+    @server.close callback
+
+  _createConnectionPool: ({maxConnections}) =>
+    connectionPool = new Pool
+      max: maxConnections
+      min: 0
+      returnToHead: true # sets connection pool to stack instead of queue behavior
+      create: (callback) =>
+        client = new RedisNS @namespace, redis.createClient(@redisUri)
+
+        client.on 'end', ->
+          client.hasError = new Error 'ended'
+
+        client.on 'error', (error) ->
+          client.hasError = error
+          callback error if callback?
+
+        client.once 'ready', ->
+          callback null, client
+          callback = null
+
+      destroy: (client) => client.end true
+      validate: (client) => !client.hasError?
+
+    return connectionPool
+
+module.exports = Server
