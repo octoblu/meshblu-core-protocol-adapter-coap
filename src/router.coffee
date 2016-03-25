@@ -12,7 +12,7 @@ WhoamiHandler             = require './handlers/whoami-handler'
 GenericRouter             = require './generic-router'
 
 class Router
-  constructor: ({@jobManager, @app}) ->
+  constructor: ({@jobManager, @app, messengerFactory}) ->
     @genericRouter = new GenericRouter
     @_setup()
 
@@ -27,16 +27,17 @@ class Router
     @whoamiHandler = new WhoamiHandler {@jobManager}
     @myDevicesHandler = new MyDevicesHandler {@jobManager}
 
-    @app.get '/healthcheck', @_onHealthcheck
-    @app.get '/status', @statusHandler
     @app.get '/devices', @searchDevicesHandler
     @app.get '/devices/:id', @getDeviceHandler
     @app.get '/devices/:id/publickey', @getDevicePublicKeyHandler
     @app.put '/devices/:id', @updateDeviceHandler
     @app.post '/devices', @registerDeviceHandler
     @app.delete '/devices/:id', @unregisterDeviceHandler
+    @app.get '/healthcheck', @_onHealthcheck
     @app.post '/messages', @sendMessageHandler
     @app.get '/mydevices', @myDevicesHandler
+    @app.get '/status', @statusHandler
+    @app.get '/subscribe', @_onSubscribe
     @app.get '/whoami', @whoamiHandler
 
   route: (req, res) =>
@@ -62,5 +63,7 @@ class Router
 
   _onHealthcheck: (req, res) =>
     res.end JSON.stringify online: true
+
+  _onSubscribe: (req, res) =>
 
 module.exports = Router

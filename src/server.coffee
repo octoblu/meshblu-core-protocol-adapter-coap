@@ -1,15 +1,16 @@
-_                      = require 'lodash'
-coap                   = require 'coap'
-colors                 = require 'colors'
-redis                  = require 'ioredis'
-RedisNS                = require '@octoblu/redis-ns'
-debug                  = require('debug')('meshblu-core-protocol-adapter-coap:server')
-Router                 = require './router'
-{Pool}                 = require 'generic-pool'
-PooledJobManager       = require 'meshblu-core-pooled-job-manager'
-JobLogger              = require 'job-logger'
-# JobToHttp              = require './helpers/job-to-http'
-PackageJSON            = require '../package.json'
+_                 = require 'lodash'
+coap              = require 'coap'
+colors            = require 'colors'
+redis             = require 'ioredis'
+RedisNS           = require '@octoblu/redis-ns'
+debug             = require('debug')('meshblu-core-protocol-adapter-coap:server')
+Router            = require './router'
+{Pool}            = require 'generic-pool'
+PooledJobManager  = require 'meshblu-core-pooled-job-manager'
+JobLogger         = require 'job-logger'
+PackageJSON       = require '../package.json'
+MessengerFactory  = require './messenger-factory'
+UuidAliasResolver = require 'meshblu-uuid-alias-resolver'
 
 class Server
   constructor: (options)->
@@ -53,7 +54,14 @@ class Server
       pool: connectionPool
       jobLogger: jobLogger
 
-    router = new Router {jobManager, app}
+    uuidAliasClient = _.bindAll new RedisNS 'uuid-alias', redis.createClient(@redisUri)
+    uuidAliasResolver = new UuidAliasResolver
+      cache: uuidAliasResolver
+      aliasServerUri: @aliasServerUri
+
+    messengerFactory = new MessengerFactory {uuidAliasResolver, @redisUri, @namespace}
+
+    router = new Router {jobManager, app, messengerFactory}
     app.on 'request', router.route
 
     @server = app.listen @port, callback

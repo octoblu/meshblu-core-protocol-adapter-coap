@@ -8,7 +8,7 @@
 - [x] DELETE /devices/{uuid}
 - [x] GET /mydevices
 - [x] GET /devices/{uuid}/publickey
-- [ ] POST /messages
+- [x] POST /messages
 - [ ] GET /subscribe
 - [ ] GET /subscribe/{uuid}
 - [ ] GET /subscribe/{uuid}/broadcast
