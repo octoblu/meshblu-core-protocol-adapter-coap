@@ -27,6 +27,7 @@ class Router
     @whoamiHandler = new WhoamiHandler {@jobManager}
     @myDevicesHandler = new MyDevicesHandler {@jobManager}
 
+    @app.get '/healthcheck', @_onHealthcheck
     @app.get '/status', @statusHandler
     @app.get '/devices', @searchDevicesHandler
     @app.get '/devices/:id', @getDeviceHandler
@@ -58,5 +59,8 @@ class Router
     return auth =
       uuid: uuidOption?.value.toString()
       token: tokenOption?.value.toString()
+
+  _onHealthcheck: (req, res) =>
+    res.end JSON.stringify online: true
 
 module.exports = Router
