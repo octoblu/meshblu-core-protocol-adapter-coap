@@ -33,11 +33,11 @@ class Router
     @app.put '/devices/:id', @updateDeviceHandler
     @app.post '/devices', @registerDeviceHandler
     @app.delete '/devices/:id', @unregisterDeviceHandler
-    @app.get '/healthcheck', @_onHealthcheck
+    @app.get '/healthcheck', do: @_onHealthcheck
     @app.post '/messages', @sendMessageHandler
     @app.get '/mydevices', @myDevicesHandler
     @app.get '/status', @statusHandler
-    @app.get '/subscribe', @_onSubscribe
+    @app.get '/subscribe', do: @_onSubscribe
     @app.get '/whoami', @whoamiHandler
 
   route: (req, res) =>
