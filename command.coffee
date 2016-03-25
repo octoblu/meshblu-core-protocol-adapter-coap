@@ -8,12 +8,12 @@ class Command
       aliasServerUri:               process.env.ALIAS_SERVER_URI
       redisUri:                     process.env.REDIS_URI
       namespace:                    process.env.NAMESPACE || 'meshblu'
-      jobTimeoutSeconds:            process.env.JOB_TIMEOUT_SECONDS || 30
-      connectionPoolMaxConnections: process.env.CONNECTION_POOL_MAX_CONNECTIONS || 100
+      jobTimeoutSeconds:            parseInt(process.env.JOB_TIMEOUT_SECONDS || 30)
+      connectionPoolMaxConnections: parseInt(process.env.CONNECTION_POOL_MAX_CONNECTIONS || 100)
       disableLogging:               process.env.DISABLE_LOGGING == "true"
       jobLogRedisUri:               process.env.JOB_LOG_REDIS_URI
       jobLogQueue:                  process.env.JOB_LOG_QUEUE
-      jobLogSampleRate:             process.env.JOB_LOG_SAMPLE_RATE
+      jobLogSampleRate:             parseFloat(process.env.JOB_LOG_SAMPLE_RATE)
 
   panic: (error) =>
     console.error error.stack
