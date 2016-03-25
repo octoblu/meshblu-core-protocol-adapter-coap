@@ -7,7 +7,7 @@ RedisNS    = require '@octoblu/redis-ns'
 JobManager = require 'meshblu-core-job-manager'
 MeshbluCoap = require 'meshblu-coap'
 
-describe 'Register', ->
+describe 'Get Device', ->
   beforeEach (done) ->
     @port = 0xd00d
     @sut = new Server
@@ -28,7 +28,7 @@ describe 'Register', ->
     @redis = new RedisNS 'meshblu:server:coap:test', redis.createClient()
     @jobManager = new JobManager client: @redis, timeoutSeconds: 1
 
-  describe 'POST /devices', ->
+  describe 'GET /whoami', ->
     context 'when the request is successful', ->
       beforeEach ->
         async.forever (next) =>
@@ -39,21 +39,22 @@ describe 'Register', ->
 
             response =
               metadata:
-                code: 201
+                code: 200
                 responseId: request.metadata.responseId
               data:
                 uuid: 'new-uuid'
-                token: 'new-token'
+                something: true
 
             @jobManager.createResponse 'response', response, (error) =>
               throw error if error?
 
       beforeEach (done) ->
-        meshblu = new MeshbluCoap server: 'localhost', port: @port
-        meshblu.register type: 'boo-yah', (error, @response) =>
+        meshblu = new MeshbluCoap server: 'localhost', port: @port, uuid: 'some-uuid', token: 'some-token'
+        meshblu.whoami (error, @response) =>
           done error
 
       it 'should return a device', ->
-        expect(JSON.parse @request.rawData).to.deep.equal type: 'boo-yah'
-        expect(@response).to.deep.equal uuid: 'new-uuid', token: 'new-token'
-        expect(@request.metadata.jobType).to.equal 'RegisterDevice'
+        expect(@request.metadata.toUuid).to.equal 'some-uuid'
+        expect(@request.metadata.auth).to.deep.equal uuid: 'some-uuid', token: 'some-token'
+        expect(@request.metadata.jobType).to.equal 'GetDevice'
+        expect(@response).to.deep.equal uuid: 'new-uuid', something: true

@@ -34,8 +34,10 @@ class Server
   run: (callback) =>
     app = coap.createServer()
 
-    app.on 'error', (error) =>
-      console.error error
+    app._origSendError = app._sendError
+    app._sendError = (payload, rsinfo, packet) =>
+      console.error "Error: #{payload.toString()}"
+      # app._origSendError payload, rsinfo, packet
 
     jobLogger = new JobLogger
       jobLogQueue: @jobLogQueue
@@ -51,9 +53,8 @@ class Server
       pool: connectionPool
       jobLogger: jobLogger
 
-    # jobToHttp = new JobToHttp
-    router = new Router {jobManager}
-    router.route app
+    router = new Router {jobManager, app}
+    app.on 'request', router.route
 
     @server = app.listen @port, callback
 

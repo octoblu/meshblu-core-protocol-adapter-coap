@@ -7,7 +7,7 @@ RedisNS    = require '@octoblu/redis-ns'
 JobManager = require 'meshblu-core-job-manager'
 MeshbluCoap = require 'meshblu-coap'
 
-describe 'Register', ->
+describe 'Send Message', ->
   beforeEach (done) ->
     @port = 0xd00d
     @sut = new Server
@@ -28,7 +28,7 @@ describe 'Register', ->
     @redis = new RedisNS 'meshblu:server:coap:test', redis.createClient()
     @jobManager = new JobManager client: @redis, timeoutSeconds: 1
 
-  describe 'POST /devices', ->
+  describe 'POST /messages', ->
     context 'when the request is successful', ->
       beforeEach ->
         async.forever (next) =>
@@ -50,10 +50,10 @@ describe 'Register', ->
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port
-        meshblu.register type: 'boo-yah', (error, @response) =>
+        meshblu.message devices: ['*'], type: 'boo-yah', (error, @response) =>
           done error
 
       it 'should return a device', ->
-        expect(JSON.parse @request.rawData).to.deep.equal type: 'boo-yah'
+        expect(JSON.parse @request.rawData).to.deep.equal devices: ['*'], type: 'boo-yah'
         expect(@response).to.deep.equal uuid: 'new-uuid', token: 'new-token'
-        expect(@request.metadata.jobType).to.equal 'RegisterDevice'
+        expect(@request.metadata.jobType).to.equal 'SendMessage'

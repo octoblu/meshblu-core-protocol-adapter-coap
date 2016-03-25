@@ -18,8 +18,6 @@ describe 'Status', ->
       namespace:   'meshblu:server:coap:test'
       jobLogQueue: 'meshblu:job-log'
       jobLogRedisUri: 'redis://localhost:6379'
-      meshbluHost: 'localhost'
-      meshbluPort: 3000
 
     @sut.run done
 
@@ -54,6 +52,4 @@ describe 'Status', ->
 
       it 'should return a 204', ->
         expect(@response).to.deep.equal online: true
-
-      it 'should have jobType GetStatus', ->
         expect(@request.metadata.jobType).to.equal 'GetStatus'

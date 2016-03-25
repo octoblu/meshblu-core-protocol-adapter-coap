@@ -1,13 +1,14 @@
-- [ ] CoAP router
+- [x] CoAP router
 - [x] GET /status
-- [ ] GET /devices?key=value&key=value
-- [ ] GET /devices/{uuid}
-- [ ] POST /devices
-- [ ] PUT /devices/{uuid}
-- [ ] DELETE /devices/{uuid}
+- [x] GET /whoami
+- [x] GET /devices?key=value&key=value
+- [x] GET /devices/{uuid}
+- [x] POST /devices
+- [x] PUT /devices/{uuid}
+- [x] DELETE /devices/{uuid}
+- [x] GET /mydevices
+- [x] GET /devices/{uuid}/publickey
 - [ ] POST /messages
-- [ ] GET /mydevices/{uuid}
-- [ ] GET /devices/{uuid}/publickey
 - [ ] GET /subscribe
 - [ ] GET /subscribe/{uuid}
 - [ ] GET /subscribe/{uuid}/broadcast
