@@ -9,6 +9,16 @@ class WhoamiHandler
         toUuid: req.meshbluAuth.uuid
 
     @jobManager.do 'request', 'response', request, (error, response) =>
+      if error?
+        res.statusCode = 500
+        res.end()
+        return
+
+      if response.metadata.code != 200
+        res.statusCode = response.metadata.code
+        res.end()
+        return
+
       res.end response.rawData
 
 module.exports = WhoamiHandler

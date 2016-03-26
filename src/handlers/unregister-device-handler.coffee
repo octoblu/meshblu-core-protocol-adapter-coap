@@ -9,6 +9,17 @@ class UnregisterDeviceHandler
         toUuid: req.params.id
 
     @jobManager.do 'request', 'response', request, (error, response) =>
-      res.end response.rawData
+      if error?
+        res.statusCode = 500
+        res.end()
+        return
+
+      if response.metadata.code != 204
+        res.statusCode = response.metadata.code
+        res.end()
+        return
+
+      res.statusCode = 202
+      res.end()
 
 module.exports = UnregisterDeviceHandler

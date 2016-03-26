@@ -1,15 +1,16 @@
-_                         = require 'lodash'
-GetStatusHandler          = require './handlers/get-status-handler'
-GetDeviceHandler          = require './handlers/get-device-handler'
-GetDevicePublicKeyHandler = require './handlers/get-device-public-key-handler'
-RegisterDeviceHandler     = require './handlers/register-device-handler'
-UnregisterDeviceHandler   = require './handlers/unregister-device-handler'
-UpdateDeviceHandler       = require './handlers/update-device-handler'
-MyDevicesHandler          = require './handlers/my-devices-handler'
-SearchDevicesHandler      = require './handlers/search-devices-handler'
-SendMessageHandler        = require './handlers/send-message-handler'
-WhoamiHandler             = require './handlers/whoami-handler'
-GenericRouter             = require './generic-router'
+_                              = require 'lodash'
+GetStatusHandler               = require './handlers/get-status-handler'
+GetDeviceHandler               = require './handlers/get-device-handler'
+GetDevicePublicKeyHandler      = require './handlers/get-device-public-key-handler'
+RegisterDeviceHandler          = require './handlers/register-device-handler'
+UnregisterDeviceHandler        = require './handlers/unregister-device-handler'
+UpdateDeviceHandler            = require './handlers/update-device-handler'
+MyDevicesHandler               = require './handlers/my-devices-handler'
+SearchDevicesHandler           = require './handlers/search-devices-handler'
+SendMessageHandler             = require './handlers/send-message-handler'
+WhoamiHandler                  = require './handlers/whoami-handler'
+GenericRouter                  = require './generic-router'
+GetAuthorizedSubscriptionTypes = require './handlers/get-authorized-subscription-types-handler'
 
 class Router
   constructor: ({@jobManager, @app, messengerFactory}) ->
@@ -38,6 +39,7 @@ class Router
     @app.get '/mydevices', @myDevicesHandler
     @app.get '/status', @statusHandler
     @app.get '/subscribe', do: @_onSubscribe
+    @app.get '/subscribe/:id', do: @_onSubscribe
     @app.get '/whoami', @whoamiHandler
 
   route: (req, res) =>
@@ -65,5 +67,29 @@ class Router
     res.end JSON.stringify online: true
 
   _onSubscribe: (req, res) =>
+    req.messenger = messengerFactory.build()
+    req.messenger.on 'message', (channel, message) =>
+      res.write JSON.stringify message
+
+    req.messenger.on 'config', (channel, message) =>
+      res.write JSON.stringify message
+
+    req.messenger.on 'data', (channel, message) =>
+      res.write JSON.stringify message
+
+    req.on 'end', =>
+      req.messenger.close()
+
+    data = JSON.parse req._packet.payload
+    data.uuid = req.params.id ? req.meshbluAuth.uuid
+    data.types ?= ['broadcast', 'received', 'sent']
+    data.types.push 'config'
+    data.types.push 'data'
+    requestQueue = 'request'
+    responseQueue = 'response'
+    handler = new GetAuthorizedSubscriptionTypesHandler {@jobManager, auth: req.meshbluAuth, requestQueue, responseQueue}
+    handler.do data, (error, type, response) =>
+      async.each response.types, (type, next) =>
+        req.messenger.subscribe {type, uuid: data.uuid}, next
 
 module.exports = Router

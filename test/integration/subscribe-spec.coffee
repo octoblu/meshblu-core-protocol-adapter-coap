@@ -7,7 +7,7 @@ RedisNS    = require '@octoblu/redis-ns'
 JobManager = require 'meshblu-core-job-manager'
 MeshbluCoap = require 'meshblu-coap'
 
-describe 'Subscribe', ->
+xdescribe 'Subscribe', ->
   beforeEach (done) ->
     @port = 0xd00d
     @sut = new Server
