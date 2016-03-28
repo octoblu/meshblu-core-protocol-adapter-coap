@@ -78,7 +78,10 @@ class Router
       res.write JSON.stringify message
 
     req.on 'end', =>
-      req.messenger.close()
+      req.messenger.close
+
+    req.on 'error', (error) =>
+      console.error error
 
     data = JSON.parse req._packet.payload
     data.uuid = req.params.id ? req.meshbluAuth.uuid

@@ -33,7 +33,10 @@ class Server
     process.exit exitCode
 
   run: (callback) =>
-    app = coap.createServer()
+    app = coap.createServer piggybackReplyMs: 0
+
+    app.on 'error', (error) =>
+      console.error "Server error:", error
 
     app._origSendError = app._sendError
     app._sendError = (payload, rsinfo, packet) =>

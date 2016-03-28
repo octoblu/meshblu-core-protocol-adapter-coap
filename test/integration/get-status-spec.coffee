@@ -41,6 +41,7 @@ describe 'Status', ->
               metadata:
                 code: 204
                 responseId: request.metadata.responseId
+              rawData: '{"meshblu":"online"}'
 
             @jobManager.createResponse 'response', response, (error) =>
               throw error if error?
@@ -51,5 +52,5 @@ describe 'Status', ->
           done error
 
       it 'should return a 204', ->
-        expect(@response).to.deep.equal online: true
+        expect(@response).to.deep.equal meshblu: 'online'
         expect(@request.metadata.jobType).to.equal 'GetStatus'
