@@ -54,4 +54,4 @@ describe 'Update Device', ->
         expect(@request.metadata.toUuid).to.equal 'new-uuid'
         expect(@request.metadata.auth).to.deep.equal uuid: 'some-uuid', token: 'some-token'
         expect(@request.metadata.jobType).to.equal 'UpdateDevice'
-        expect(@request.rawData).to.equal '{"foo":"bar"}'
+        expect(@request.rawData).to.equal '{"$set":{"foo":"bar"}}'

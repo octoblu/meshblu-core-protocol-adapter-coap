@@ -7,7 +7,7 @@ RedisNS    = require '@octoblu/redis-ns'
 JobManager = require 'meshblu-core-job-manager'
 MeshbluCoap = require 'meshblu-coap'
 
-xdescribe 'Subscribe', ->
+describe 'Subscribe', ->
   beforeEach (done) ->
     @port = 0xd00d
     @sut = new Server
@@ -42,17 +42,15 @@ xdescribe 'Subscribe', ->
                 code: 200
                 responseId: request.metadata.responseId
               data:
-                publicKey: 'some-key'
-
+                types: ['broadcast']
             @jobManager.createResponse 'response', response, (error) =>
               throw error if error?
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port, uuid: 'some-uuid', token: 'some-token'
-        meshblu.subscribe 'new-uuid', (error, @response) =>
+        meshblu.subscribe 'new-uuid', {}, (error, @response) =>
           done error
 
       it 'should return a device', ->
         expect(@request.metadata.toUuid).to.equal 'new-uuid'
-        expect(@request.metadata.jobType).to.equal 'GetDevicePublicKey'
-        expect(@response).to.deep.equal publicKey: 'some-key'
+        expect(@request.metadata.jobType).to.equal 'GetAuthorizedSubscriptionTypes'

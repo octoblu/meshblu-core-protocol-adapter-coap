@@ -7,6 +7,8 @@ class GetStatusHandler
         jobType: 'GetStatus'
 
     @jobManager.do 'request', 'response', request, (error, response) =>
-      res.end response.rawData
+      setTimeout =>
+        res.end response.rawData
+      , 200
 
 module.exports = GetStatusHandler

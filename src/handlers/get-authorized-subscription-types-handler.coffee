@@ -5,7 +5,6 @@ class GetAuthorizedSubscriptionTypesHandler
   constructor: ({@jobManager,@auth,@requestQueue,@responseQueue}) ->
 
   do: (data, callback) =>
-
     request =
       metadata:
         jobType: 'GetAuthorizedSubscriptionTypes'
@@ -14,7 +13,7 @@ class GetAuthorizedSubscriptionTypesHandler
       data: data
 
     @jobManager.do @requestQueue, @responseQueue, request, (error, response) =>
-      return callback error, 'get-authorized-subscription-types' if error?
-      callback null, 'get-authorized-subscription-types', JSON.parse(response.rawData)
+      return callback error if error?
+      callback null, JSON.parse(response.rawData)
 
 module.exports = GetAuthorizedSubscriptionTypesHandler

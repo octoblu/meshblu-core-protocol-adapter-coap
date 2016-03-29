@@ -33,15 +33,15 @@ class Server
     process.exit exitCode
 
   run: (callback) =>
-    app = coap.createServer piggybackReplyMs: 0
+    app = coap.createServer()
 
     app.on 'error', (error) =>
-      console.error "Server error:", error
+      console.error "Server error:", error.stack
 
     app._origSendError = app._sendError
     app._sendError = (payload, rsinfo, packet) =>
-      console.error "Error: #{payload.toString()}"
-      # app._origSendError payload, rsinfo, packet
+      console.error "Sending Client Error: #{payload.toString()}"
+      process.exit 1
 
     jobLogger = new JobLogger
       jobLogQueue: @jobLogQueue

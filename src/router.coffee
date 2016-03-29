@@ -1,4 +1,5 @@
 _                              = require 'lodash'
+async                          = require 'async'
 GetStatusHandler               = require './handlers/get-status-handler'
 GetDeviceHandler               = require './handlers/get-device-handler'
 GetDevicePublicKeyHandler      = require './handlers/get-device-public-key-handler'
@@ -10,10 +11,10 @@ SearchDevicesHandler           = require './handlers/search-devices-handler'
 SendMessageHandler             = require './handlers/send-message-handler'
 WhoamiHandler                  = require './handlers/whoami-handler'
 GenericRouter                  = require './generic-router'
-GetAuthorizedSubscriptionTypes = require './handlers/get-authorized-subscription-types-handler'
+GetAuthorizedSubscriptionTypesHandler = require './handlers/get-authorized-subscription-types-handler'
 
 class Router
-  constructor: ({@jobManager, @app, messengerFactory}) ->
+  constructor: ({@jobManager, @app, @messengerFactory}) ->
     @genericRouter = new GenericRouter
     @_setup()
 
@@ -47,6 +48,13 @@ class Router
     {code,options} = _packet
     uri = req.url
     req.meshbluAuth = @_getMeshbluAuth req
+
+    req.on 'error', (error) =>
+      console.error error.stack
+
+    res.on 'error', (error) =>
+      console.error error.stack
+
     @genericRouter.route {code, uri, req, res}
 
   _setup: =>
@@ -67,23 +75,21 @@ class Router
     res.end JSON.stringify online: true
 
   _onSubscribe: (req, res) =>
-    req.messenger = messengerFactory.build()
-    req.messenger.on 'message', (channel, message) =>
-      res.write JSON.stringify message
+    messenger = @messengerFactory.build()
 
-    req.messenger.on 'config', (channel, message) =>
-      res.write JSON.stringify message
+    messenger.on 'message', (channel, message) =>
+      res.write JSON.stringify(message) + '\n'
 
-    req.messenger.on 'data', (channel, message) =>
-      res.write JSON.stringify message
+    messenger.on 'config', (channel, message) =>
+      res.write JSON.stringify(message) + '\n'
 
-    req.on 'end', =>
-      req.messenger.close
+    messenger.on 'data', (channel, message) =>
+      res.write JSON.stringify(message) + '\n'
 
-    req.on 'error', (error) =>
-      console.error error
+    res.on 'finish', =>
+      messenger.close
 
-    data = JSON.parse req._packet.payload
+    data = _.clone req.query
     data.uuid = req.params.id ? req.meshbluAuth.uuid
     data.types ?= ['broadcast', 'received', 'sent']
     data.types.push 'config'
@@ -91,8 +97,13 @@ class Router
     requestQueue = 'request'
     responseQueue = 'response'
     handler = new GetAuthorizedSubscriptionTypesHandler {@jobManager, auth: req.meshbluAuth, requestQueue, responseQueue}
-    handler.do data, (error, type, response) =>
+    handler.do data, (error, response) =>
+      res.end() if error?
+
       async.each response.types, (type, next) =>
-        req.messenger.subscribe {type, uuid: data.uuid}, next
+        messenger.subscribe {type, uuid: data.uuid}, next
+      , (error) =>
+        return res.end() if error?
+        res.write JSON.stringify({subscribed: true}) + '\n'
 
 module.exports = Router
