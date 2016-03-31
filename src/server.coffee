@@ -91,7 +91,13 @@ class Server
           callback null, client
           callback = null
 
-      destroy: (client) => client.end true
+      destroy: (client) =>
+        if client.quit?
+          client.quit()
+          client.disconnect false
+          return
+        client.end true
+
       validate: (client) => !client.hasError?
 
     return connectionPool
