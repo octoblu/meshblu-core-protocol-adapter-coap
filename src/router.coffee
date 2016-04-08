@@ -87,7 +87,7 @@ class Router
       res.write JSON.stringify(message) + '\n'
 
     res.on 'finish', =>
-      messenger.close
+      messenger.close()
 
     data = _.clone req.query
     data.uuid = req.params.id ? req.meshbluAuth.uuid
