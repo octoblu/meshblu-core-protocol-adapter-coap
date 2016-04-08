@@ -15,6 +15,8 @@ describe 'Send Message', ->
       disableLogging: true
       jobTimeoutSeconds: 1
       jobLogSampleRate: 0
+      maxConnections: 10
+      redisUri: 'redis://localhost'
       namespace:   'meshblu:server:coap:test'
       jobLogQueue: 'meshblu:job-log'
       jobLogRedisUri: 'redis://localhost:6379'

@@ -9,7 +9,7 @@ class Command
       redisUri:                     process.env.REDIS_URI
       namespace:                    process.env.NAMESPACE || 'meshblu'
       jobTimeoutSeconds:            parseInt(process.env.JOB_TIMEOUT_SECONDS || 30)
-      connectionPoolMaxConnections: parseInt(process.env.CONNECTION_POOL_MAX_CONNECTIONS || 100)
+      maxConnections:               parseInt(process.env.CONNECTION_POOL_MAX_CONNECTIONS || 100)
       disableLogging:               process.env.DISABLE_LOGGING == "true"
       jobLogRedisUri:               process.env.JOB_LOG_REDIS_URI
       jobLogQueue:                  process.env.JOB_LOG_QUEUE
