@@ -86,24 +86,29 @@ class Router
     messenger.on 'data', (channel, message) =>
       res.write JSON.stringify(message) + '\n'
 
+    res.on 'error', (error) =>
+      messenger.close()
+
     res.on 'finish', =>
       messenger.close()
 
-    data = _.clone req.query
-    data.uuid = req.params.id ? req.meshbluAuth.uuid
-    data.types ?= ['broadcast', 'received', 'sent']
-    data.types.push 'config'
-    data.types.push 'data'
-    requestQueue = 'request'
-    responseQueue = 'response'
-    handler = new GetAuthorizedSubscriptionTypesHandler {@jobManager, auth: req.meshbluAuth, requestQueue, responseQueue}
-    handler.do data, (error, response) =>
-      res.end() if error?
+    messenger.connect (error) =>
+      return res.end() if error?
+      data = _.clone req.query
+      data.uuid = req.params.id ? req.meshbluAuth.uuid
+      data.types ?= ['broadcast', 'received', 'sent']
+      data.types.push 'config'
+      data.types.push 'data'
+      requestQueue = 'request'
+      responseQueue = 'response'
+      handler = new GetAuthorizedSubscriptionTypesHandler {@jobManager, auth: req.meshbluAuth, requestQueue, responseQueue}
+      handler.do data, (error, response) =>
+        res.end() if error?
 
-      async.each response.types, (type, next) =>
-        messenger.subscribe {type, uuid: data.uuid}, next
-      , (error) =>
-        return res.end() if error?
-        res.write JSON.stringify({subscribed: true}) + '\n'
+        async.each response.types, (type, next) =>
+          messenger.subscribe {type, uuid: data.uuid}, next
+        , (error) =>
+          return res.end() if error?
+          res.write JSON.stringify({subscribed: true}) + '\n'
 
 module.exports = Router
