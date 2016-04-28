@@ -76,6 +76,9 @@ class Router
 
   _onSubscribe: (req, res) =>
     messenger = @messengerFactory.build()
+    setTimeout =>
+      res.end()
+    , 5*60*1000
 
     messenger.on 'message', (channel, message) =>
       res.write JSON.stringify(message) + '\n'
