@@ -7,7 +7,7 @@ class MessengerFactory
   constructor: ({@uuidAliasResolver, @namespace, @redisUri}) ->
 
   build: =>
-    client = new RedisNS @namespace, redis.createClient(@redisUri)
+    client = new RedisNS @namespace, redis.createClient(@redisUri, dropBufferSupport: true)
     new MessengerManager {client, @uuidAliasResolver}
 
 module.exports = MessengerFactory

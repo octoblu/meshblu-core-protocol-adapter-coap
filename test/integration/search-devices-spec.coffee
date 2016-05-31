@@ -27,7 +27,7 @@ describe 'Search Devices', ->
     @sut.stop => done()
 
   beforeEach ->
-    @redis = new RedisNS 'meshblu:server:coap:test', redis.createClient()
+    @redis = new RedisNS 'meshblu:server:coap:test', redis.createClient(dropBufferSupport: true)
     @jobManager = new JobManager client: @redis, timeoutSeconds: 1
 
   describe 'GET /devices?foo=bar', ->
