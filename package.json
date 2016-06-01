@@ -1,6 +1,6 @@
 {
   "name": "meshblu-core-protocol-adapter-coap",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Meshblu Core Protocol Adapter for CoAP",
   "main": "command.js",
   "scripts": {
@@ -40,7 +40,7 @@
     "lodash": "^4.6.1",
     "meshblu-coap": "^1.0.5",
     "meshblu-core-manager-messenger": "^2.1.0",
-    "meshblu-core-redis-pooled-job-manager": "^2.2.1",
+    "meshblu-core-redis-pooled-job-manager": "^2.2.2",
     "meshblu-uuid-alias-resolver": "^1.0.3",
     "qs": "^6.1.0",
     "url-pattern": "^1.0.1"
