@@ -14,7 +14,7 @@ GenericRouter                  = require './generic-router'
 GetAuthorizedSubscriptionTypesHandler = require './handlers/get-authorized-subscription-types-handler'
 
 class Router
-  constructor: ({@jobManager, @app, @messengerFactory}) ->
+  constructor: ({@jobManager, @app, @messengerManagerFactory}) ->
     @genericRouter = new GenericRouter
     @_setup()
 
@@ -75,7 +75,7 @@ class Router
     res.end JSON.stringify online: true
 
   _onSubscribe: (req, res) =>
-    messenger = @messengerFactory.build()
+    messenger = @messengerManagerFactory.build()
     setTimeout =>
       res.end()
     , 5*60*1000
