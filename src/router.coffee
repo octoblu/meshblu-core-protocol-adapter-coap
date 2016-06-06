@@ -89,6 +89,10 @@ class Router
     messenger.on 'data', (channel, message) =>
       res.write JSON.stringify(message) + '\n'
 
+    messenger.once 'error', (error) =>
+      messenger.close()
+      res.end()
+
     res.on 'error', (error) =>
       messenger.close()
 
