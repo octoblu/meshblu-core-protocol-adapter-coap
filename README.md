@@ -2,7 +2,10 @@
 Meshblu Core Protocol Adapter
 
 [![Build Status](https://travis-ci.org/octoblu/meshblu-core-protocol-adapter-coap.svg?branch=master)](https://travis-ci.org/octoblu/meshblu-core-protocol-adapter-coap)
-[![Code Climate](https://codeclimate.com/github/octoblu/meshblu-core-protocol-adapter-coap/badges/gpa.svg)](https://codeclimate.com/github/octoblu/meshblu-core-protocol-adapter-coap)
-[![Test Coverage](https://codeclimate.com/github/octoblu/meshblu-core-protocol-adapter-coap/badges/coverage.svg)](https://codeclimate.com/github/octoblu/meshblu-core-protocol-adapter-coap)
-[![npm version](https://badge.fury.io/js/meshblu-core-protocol-adapter-coap.svg)](http://badge.fury.io/js/meshblu-core-protocol-adapter-coap)
-[![Gitter](https://badges.gitter.im/octoblu/help.svg)](https://gitter.im/octoblu/help)
+[![Test Coverage](https://codecov.io/gh/octoblu/meshblu-core-protocol-adapter-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/octoblu/meshblu-core-protocol-adapter-coap)
+[![Dependency status](http://img.shields.io/david/octoblu/meshblu-core-protocol-adapter-coap.svg?style=flat)](https://david-dm.org/octoblu/meshblu-core-protocol-adapter-coap)
+[![devDependency Status](http://img.shields.io/david/dev/octoblu/meshblu-core-protocol-adapter-coap.svg?style=flat)](https://david-dm.org/octoblu/meshblu-core-protocol-adapter-coap#info=devDependencies)
+[![Slack Status](http://community-slack.octoblu.com/badge.svg)](http://community-slack.octoblu.com)
+
+[![NPM](https://nodei.co/npm/meshblu-core-protocol-adapter-coap.svg?style=flat)](https://npmjs.org/package/meshblu-core-protocol-adapter-coap)
+
