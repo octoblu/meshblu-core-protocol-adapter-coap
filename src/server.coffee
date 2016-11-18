@@ -64,8 +64,8 @@ class Server
 
     jobLogger = new JobLogger
       client: new Redis @jobLogRedisUri, dropBufferSupport: true
-      indexPrefix: 'metric:meshblu-core-protocol-adapter-mqtt'
-      type: 'meshblu-core-protocol-adapter-mqtt:request'
+      indexPrefix: 'metric:meshblu-core-protocol-adapter-coap'
+      type: 'meshblu-core-protocol-adapter-coap:request'
       jobLogQueue: @jobLogQueue
 
     @jobManager = new JobManagerRequester {
