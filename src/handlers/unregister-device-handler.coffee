@@ -8,7 +8,7 @@ class UnregisterDeviceHandler
         auth: req.meshbluAuth
         toUuid: req.params.id
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       if error?
         res.statusCode = 500
         res.end()

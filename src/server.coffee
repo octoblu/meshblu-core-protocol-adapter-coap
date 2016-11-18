@@ -1,14 +1,15 @@
 _                       = require 'lodash'
 coap                    = require 'coap'
 colors                  = require 'colors'
-redis                   = require 'ioredis'
+Redis                   = require 'ioredis'
 RedisNS                 = require '@octoblu/redis-ns'
 debug                   = require('debug')('meshblu-core-protocol-adapter-coap:server')
 Router                  = require './router'
-RedisPooledJobManager   = require 'meshblu-core-redis-pooled-job-manager'
 PackageJSON             = require '../package.json'
 MessengerManagerFactory = require 'meshblu-core-manager-messenger/factory'
 UuidAliasResolver       = require 'meshblu-uuid-alias-resolver'
+JobLogger               = require 'job-logger'
+{ JobManagerRequester } = require 'meshblu-core-job-manager'
 
 class Server
   constructor: (options)->
@@ -17,6 +18,7 @@ class Server
       @port
       @aliasServerUri
       @redisUri
+      @cacheRedisUri
       @firehoseRedisUri
       @namespace
       @jobTimeoutSeconds
@@ -24,10 +26,17 @@ class Server
       @jobLogRedisUri
       @jobLogQueue
       @jobLogSampleRate
+      @requestQueueName
+      @responseQueueName
     } = options
+    @panic 'missing @redisUri', 2 unless @redisUri?
+    @panic 'missing @cacheRedisUri', 2 unless @cacheRedisUri?
+    @panic 'missing @firehoseRedisUri', 2 unless @firehoseRedisUri?
     @panic 'missing @jobLogQueue', 2 unless @jobLogQueue?
     @panic 'missing @jobLogRedisUri', 2 unless @jobLogRedisUri?
     @panic 'missing @jobLogSampleRate', 2 unless @jobLogSampleRate?
+    @panic 'missing @requestQueueName', 2 unless @requestQueueName?
+    @panic 'missing @responseQueueName', 2 unless @responseQueueName?
 
   address: =>
     port: @server._port
@@ -50,31 +59,49 @@ class Server
       console.error "Sending Client Error: #{payload.toString()}"
       process.exit 1
 
-    jobManager = new RedisPooledJobManager {
-      jobLogIndexPrefix: 'metric:meshblu-core-protocol-adapter-coap'
-      jobLogType: 'meshblu-core-protocol-adapter-coap:request'
+    client = new RedisNS @namespace, new Redis @redisUri, dropBufferSupport: true
+    queueClient = new RedisNS @namespace, new Redis @redisUri, dropBufferSupport: true
+
+    jobLogger = new JobLogger
+      client: new Redis @jobLogRedisUri, dropBufferSupport: true
+      indexPrefix: 'metric:meshblu-core-protocol-adapter-mqtt'
+      type: 'meshblu-core-protocol-adapter-mqtt:request'
+      jobLogQueue: @jobLogQueue
+
+    @jobManager = new JobManagerRequester {
+      client
+      queueClient
       @jobTimeoutSeconds
-      @jobLogQueue
-      @jobLogRedisUri
       @jobLogSampleRate
-      @maxConnections
-      @redisUri
-      @namespace
+      @requestQueueName
+      @responseQueueName
+      queueTimeoutSeconds: @jobTimeoutSeconds
     }
 
-    uuidAliasClient = _.bindAll new RedisNS 'uuid-alias', redis.createClient(@redisUri, dropBufferSupport: true)
+    @jobManager._do = @jobManager.do
+    @jobManager.do = (request, callback) =>
+      @jobManager._do request, (error, response) =>
+        jobLogger.log { error, request, response }, (jobLoggerError) =>
+          return callback jobLoggerError if jobLoggerError?
+          callback error, response
+
+    queueClient.on 'ready', =>
+      @jobManager.startProcessing()
+
+    uuidAliasClient = _.bindAll new RedisNS 'uuid-alias', new Redis @cacheRedisUri, dropBufferSupport: true
     uuidAliasResolver = new UuidAliasResolver
       cache: uuidAliasResolver
       aliasServerUri: @aliasServerUri
 
     messengerManagerFactory = new MessengerManagerFactory {uuidAliasResolver, @namespace, redisUri: @firehoseRedisUri}
 
-    router = new Router {jobManager, app, messengerManagerFactory}
+    router = new Router {@jobManager, app, messengerManagerFactory}
     app.on 'request', router.route
 
     @server = app.listen @port, callback
 
   stop: (callback) =>
+    @jobManager?.stopProcessing()
     @server.close callback
 
 module.exports = Server

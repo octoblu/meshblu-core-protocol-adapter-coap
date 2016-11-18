@@ -8,7 +8,7 @@ class SendMessageHandler
         auth: req.meshbluAuth
       rawData: req._packet.payload
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       res.statusCode = 201
       res.end response.rawData
 

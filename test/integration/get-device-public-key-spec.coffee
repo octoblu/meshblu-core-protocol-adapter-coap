@@ -1,25 +1,34 @@
-_ = require 'lodash'
-{request} = require 'coap'
-Server = require '../../src/server'
-async      = require 'async'
-redis      = require 'ioredis'
-RedisNS    = require '@octoblu/redis-ns'
-JobManager = require 'meshblu-core-job-manager'
+_           = require 'lodash'
+{request}   = require 'coap'
+Server      = require '../../src/server'
+async       = require 'async'
+Redis       = require 'ioredis'
+RedisNS     = require '@octoblu/redis-ns'
 MeshbluCoap = require 'meshblu-coap'
+UUID        = require 'uuid'
+{ JobManagerResponder } = require 'meshblu-core-job-manager'
 
 describe 'Get Device PublicKey', ->
   beforeEach (done) ->
     @port = 0xd00d
-    @sut = new Server
+    queueId = UUID.v4()
+    @requestQueueName = "test:request:queue:#{queueId}"
+    @responseQueueName = "test:response:queue:#{queueId}"
+    @sut = new Server {
       port: @port
       disableLogging: true
       jobTimeoutSeconds: 1
       jobLogSampleRate: 0
       maxConnections: 10
       redisUri: 'redis://localhost'
+      cacheRedisUri: 'redis://localhost'
+      firehoseRedisUri: 'redis://localhost'
       namespace:   'meshblu:server:coap:test'
       jobLogQueue: 'meshblu:job-log'
       jobLogRedisUri: 'redis://localhost:6379'
+      @requestQueueName
+      @responseQueueName
+    }
 
     @sut.run done
 
@@ -27,27 +36,30 @@ describe 'Get Device PublicKey', ->
     @sut.stop => done()
 
   beforeEach ->
-    @redis = new RedisNS 'meshblu:server:coap:test', redis.createClient(dropBufferSupport: true)
-    @jobManager = new JobManager client: @redis, timeoutSeconds: 1
+    client = new RedisNS 'meshblu:server:coap:test', new Redis 'localhost', dropBufferSupport: true
+    queueClient = new RedisNS 'meshblu:server:coap:test', new Redis 'localhost', dropBufferSupport: true
+    @jobManager = new JobManagerResponder {
+      client
+      queueClient
+      jobTimeoutSeconds: 1
+      queueTimeoutSeconds: 1
+      jobLogSampleRate: 0
+      @requestQueueName
+      @responseQueueName
+    }
 
   describe 'GET /devices/some-device/publickey', ->
     context 'when the request is successful', ->
       beforeEach ->
-        async.forever (next) =>
-          @jobManager.getRequest ['request'], (error, request) =>
-            next request
-            return unless request?
-            @request = request
+        @jobManager.do (@request, callback) =>
+          response =
+            metadata:
+              code: 200
+              responseId: @request.metadata.responseId
+            data:
+              publicKey: 'some-key'
 
-            response =
-              metadata:
-                code: 200
-                responseId: request.metadata.responseId
-              data:
-                publicKey: 'some-key'
-
-            @jobManager.createResponse 'response', response, (error) =>
-              throw error if error?
+          callback null, response
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port, uuid: 'some-uuid', token: 'some-token'

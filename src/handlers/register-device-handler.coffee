@@ -7,7 +7,7 @@ class RegisterDeviceHandler
         jobType: 'RegisterDevice'
       rawData: req._packet.payload
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       if error?
         res.statusCode = 500
         res.end()

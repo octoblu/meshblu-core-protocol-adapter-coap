@@ -6,7 +6,7 @@ class GetStatusHandler
       metadata:
         jobType: 'GetStatus'
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       setTimeout =>
         res.end response.rawData
       , 200

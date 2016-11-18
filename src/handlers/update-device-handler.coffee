@@ -10,7 +10,7 @@ class UpdateDeviceHandler
         toUuid: req.params.id
       data: $set: data
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       res.code = '2.04'
       res.end response.rawData
 

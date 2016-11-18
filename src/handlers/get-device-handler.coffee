@@ -8,7 +8,7 @@ class GetDeviceHandler
         auth: req.meshbluAuth
         toUuid: req.params.id
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       res.end response.rawData
 
 module.exports = GetDeviceHandler

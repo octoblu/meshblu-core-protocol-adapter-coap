@@ -9,7 +9,7 @@ class MyDevicesHandler
       data:
         owner: req.meshbluAuth.uuid
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       res.end response.rawData
 
 module.exports = MyDevicesHandler

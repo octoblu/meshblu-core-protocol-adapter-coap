@@ -9,7 +9,7 @@ class SearchDevicesHandler
         toUuid: req.params.id
       data: req.query
 
-    @jobManager.do 'request', 'response', request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       res.end response.rawData
 
 module.exports = SearchDevicesHandler

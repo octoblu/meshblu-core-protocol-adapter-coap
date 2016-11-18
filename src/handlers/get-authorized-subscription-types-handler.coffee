@@ -2,7 +2,7 @@ _ = require 'lodash'
 http = require 'http'
 
 class GetAuthorizedSubscriptionTypesHandler
-  constructor: ({@jobManager,@auth,@requestQueue,@responseQueue}) ->
+  constructor: ({@jobManager,@auth}) ->
 
   do: (data, callback) =>
     request =
@@ -12,7 +12,7 @@ class GetAuthorizedSubscriptionTypesHandler
         auth: @auth
       data: data
 
-    @jobManager.do @requestQueue, @responseQueue, request, (error, response) =>
+    @jobManager.do request, (error, response) =>
       return callback error if error?
       callback null, JSON.parse(response.rawData)
 
