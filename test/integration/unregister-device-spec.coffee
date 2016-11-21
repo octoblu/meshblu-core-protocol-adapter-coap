@@ -14,18 +14,20 @@ describe 'Unregister', ->
     queueId = UUID.v4()
     @requestQueueName = "test:request:queue:#{queueId}"
     @responseQueueName = "test:response:queue:#{queueId}"
+    @namespace = 'ns'
+    @redisUri = 'redis://localhost'
     @sut = new Server {
       port: @port
       disableLogging: true
       jobTimeoutSeconds: 1
       jobLogSampleRate: 0
       maxConnections: 10
-      redisUri: 'redis://localhost'
-      cacheRedisUri: 'redis://localhost'
-      firehoseRedisUri: 'redis://localhost'
-      namespace:   'meshblu:server:coap:test'
+      redisUri: @redisUri
+      cacheRedisUri: @redisUri
+      firehoseRedisUri: @redisUri
+      namespace: @namespace
       jobLogQueue: 'meshblu:job-log'
-      jobLogRedisUri: 'redis://localhost:6379'
+      jobLogRedisUri: @redisUri
       @requestQueueName
       @responseQueueName
     }
@@ -35,18 +37,21 @@ describe 'Unregister', ->
   afterEach (done) ->
     @sut.stop => done()
 
-  beforeEach ->
-    client = new RedisNS 'meshblu:server:coap:test', new Redis 'localhost', dropBufferSupport: true
-    queueClient = new RedisNS 'meshblu:server:coap:test', new Redis 'localhost', dropBufferSupport: true
+  beforeEach (done) ->
     @jobManager = new JobManagerResponder {
-      client
-      queueClient
+      @namespace
+      @redisUri
+      maxConnections: 1
       jobTimeoutSeconds: 1
       queueTimeoutSeconds: 1
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
     }
+    @jobManager.start done
+
+  afterEach (done) ->
+    @jobManager.stop done
 
   describe 'DELETE /devices/some-uuid', ->
     context 'when the request is successful', ->

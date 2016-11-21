@@ -59,9 +59,6 @@ class Server
       console.error "Sending Client Error: #{payload.toString()}"
       process.exit 1
 
-    client = new RedisNS @namespace, new Redis @redisUri, dropBufferSupport: true
-    queueClient = new RedisNS @namespace, new Redis @redisUri, dropBufferSupport: true
-
     jobLogger = new JobLogger
       client: new Redis @jobLogRedisUri, dropBufferSupport: true
       indexPrefix: 'metric:meshblu-core-protocol-adapter-coap'
@@ -69,14 +66,18 @@ class Server
       jobLogQueue: @jobLogQueue
 
     @jobManager = new JobManagerRequester {
-      client
-      queueClient
+      @redisUri
+      @namespace
+      maxConnections: 2
       @jobTimeoutSeconds
       @jobLogSampleRate
       @requestQueueName
       @responseQueueName
       queueTimeoutSeconds: @jobTimeoutSeconds
     }
+
+    @jobManager.once 'error', (error) =>
+      @panic 'fatal job manager error', 1, error
 
     @jobManager._do = @jobManager.do
     @jobManager.do = (request, callback) =>
@@ -85,23 +86,22 @@ class Server
           return callback jobLoggerError if jobLoggerError?
           callback error, response
 
-    queueClient.on 'ready', =>
-      @jobManager.startProcessing()
+    @jobManager.start (error) =>
+      return callback error if error?
+      uuidAliasClient = new RedisNS 'uuid-alias', new Redis @cacheRedisUri, dropBufferSupport: true
+      uuidAliasResolver = new UuidAliasResolver
+        cache: uuidAliasResolver
+        aliasServerUri: @aliasServerUri
 
-    uuidAliasClient = _.bindAll new RedisNS 'uuid-alias', new Redis @cacheRedisUri, dropBufferSupport: true
-    uuidAliasResolver = new UuidAliasResolver
-      cache: uuidAliasResolver
-      aliasServerUri: @aliasServerUri
+      messengerManagerFactory = new MessengerManagerFactory {uuidAliasResolver, @namespace, redisUri: @firehoseRedisUri}
 
-    messengerManagerFactory = new MessengerManagerFactory {uuidAliasResolver, @namespace, redisUri: @firehoseRedisUri}
+      router = new Router {@jobManager, app, messengerManagerFactory}
+      app.on 'request', router.route
 
-    router = new Router {@jobManager, app, messengerManagerFactory}
-    app.on 'request', router.route
-
-    @server = app.listen @port, callback
+      @server = app.listen @port, callback
 
   stop: (callback) =>
-    @jobManager?.stopProcessing()
-    @server.close callback
+    @jobManager.stop =>
+      @server.close callback
 
 module.exports = Server
