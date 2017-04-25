@@ -38,6 +38,8 @@ describe 'Subscribe', ->
     @sut.stop => done()
 
   beforeEach (done) ->
+    @workerFunc = sinon.stub()
+
     @jobManager = new JobManagerResponder {
       @namespace
       @redisUri
@@ -47,6 +49,7 @@ describe 'Subscribe', ->
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
+      @workerFunc
     }
     @jobManager.start done
 
@@ -56,15 +59,11 @@ describe 'Subscribe', ->
   describe 'GET /subscribe', ->
     context 'when the request is successful', ->
       beforeEach ->
-        @jobManager.do (@request, callback) =>
-          response =
-            metadata:
-              code: 200
-              responseId: @request.metadata.responseId
-            data:
-              types: ['broadcast']
-
-          callback null, response
+        @workerFunc.yields null,
+          metadata:
+            code: 200
+          data:
+            types: ['broadcast']
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port, uuid: 'some-uuid', token: 'some-token'
@@ -72,5 +71,6 @@ describe 'Subscribe', ->
           done error
 
       it 'should return a device', ->
-        expect(@request.metadata.toUuid).to.equal 'new-uuid'
-        expect(@request.metadata.jobType).to.equal 'GetAuthorizedSubscriptionTypes'
+        request = @workerFunc.firstCall.args[0]
+        expect(request.metadata.toUuid).to.equal 'new-uuid'
+        expect(request.metadata.jobType).to.equal 'GetAuthorizedSubscriptionTypes'

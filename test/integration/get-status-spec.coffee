@@ -38,6 +38,8 @@ describe 'Status', ->
     @sut.stop => done()
 
   beforeEach (done) ->
+    @workerFunc = sinon.stub()
+
     @jobManager = new JobManagerResponder {
       @namespace
       @redisUri
@@ -47,6 +49,7 @@ describe 'Status', ->
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
+      @workerFunc
     }
     @jobManager.start done
 
@@ -56,14 +59,10 @@ describe 'Status', ->
   describe 'GET /status', ->
     context 'when the request is successful', ->
       beforeEach ->
-        @jobManager.do (@request, callback) =>
-          response =
-            metadata:
-              code: 204
-              responseId: @request.metadata.responseId
-            rawData: '{"meshblu":"online"}'
-
-          callback null, response
+        @workerFunc.yields null,
+          metadata:
+            code: 204            
+          rawData: '{"meshblu":"online"}'
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port
@@ -71,5 +70,6 @@ describe 'Status', ->
           done error
 
       it 'should return a 204', ->
+        request = @workerFunc.firstCall.args[0]
         expect(@response).to.deep.equal meshblu: 'online'
-        expect(@request.metadata.jobType).to.equal 'GetStatus'
+        expect(request.metadata.jobType).to.equal 'GetStatus'

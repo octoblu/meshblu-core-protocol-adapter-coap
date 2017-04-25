@@ -38,6 +38,8 @@ describe 'Send Message', ->
     @sut.stop => done()
 
   beforeEach (done) ->
+    @workerFunc = sinon.stub()
+
     @jobManager = new JobManagerResponder {
       @namespace
       @redisUri
@@ -47,6 +49,7 @@ describe 'Send Message', ->
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
+      @workerFunc
     }
     @jobManager.start done
 
@@ -56,16 +59,13 @@ describe 'Send Message', ->
   describe 'POST /messages', ->
     context 'when the request is successful', ->
       beforeEach ->
-        @jobManager.do (@request, callback) =>
+        @workerFunc.yields null,
           response =
             metadata:
               code: 201
-              responseId: @request.metadata.responseId
             data:
               uuid: 'new-uuid'
               token: 'new-token'
-
-          callback null, response
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port
@@ -73,6 +73,7 @@ describe 'Send Message', ->
           done error
 
       it 'should return a device', ->
-        expect(JSON.parse @request.rawData).to.deep.equal devices: ['*'], type: 'boo-yah'
+        request = @workerFunc.firstCall.args[0]
+        expect(JSON.parse request.rawData).to.deep.equal devices: ['*'], type: 'boo-yah'
+        expect(request.metadata.jobType).to.equal 'SendMessage'
         expect(@response).to.deep.equal uuid: 'new-uuid', token: 'new-token'
-        expect(@request.metadata.jobType).to.equal 'SendMessage'

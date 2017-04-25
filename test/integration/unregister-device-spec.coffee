@@ -38,6 +38,8 @@ describe 'Unregister', ->
     @sut.stop => done()
 
   beforeEach (done) ->
+    @workerFunc = sinon.stub()
+
     @jobManager = new JobManagerResponder {
       @namespace
       @redisUri
@@ -47,6 +49,7 @@ describe 'Unregister', ->
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
+      @workerFunc
     }
     @jobManager.start done
 
@@ -56,13 +59,9 @@ describe 'Unregister', ->
   describe 'DELETE /devices/some-uuid', ->
     context 'when the request is successful', ->
       beforeEach ->
-        @jobManager.do (@request, callback) =>
-          response =
-            metadata:
-              code: 204
-              responseId: @request.metadata.responseId
-
-          callback null, response
+        @workerFunc.yields null,
+          metadata:
+            code: 204
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port
@@ -70,4 +69,5 @@ describe 'Unregister', ->
           done error
 
       it 'should return a device', ->
-        expect(@request.metadata.jobType).to.equal 'UnregisterDevice'
+        request = @workerFunc.firstCall.args[0]
+        expect(request.metadata.jobType).to.equal 'UnregisterDevice'

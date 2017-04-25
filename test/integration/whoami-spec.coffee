@@ -8,7 +8,7 @@ MeshbluCoap = require 'meshblu-coap'
 UUID        = require 'uuid'
 { JobManagerResponder } = require 'meshblu-core-job-manager'
 
-describe 'Get Device', ->
+describe 'Whoami Device', ->
   beforeEach (done) ->
     @port = 0xd00d
     queueId = UUID.v4()
@@ -38,6 +38,8 @@ describe 'Get Device', ->
     @sut.stop => done()
 
   beforeEach (done) ->
+    @workerFunc = sinon.stub()
+
     @jobManager = new JobManagerResponder {
       @namespace
       @redisUri
@@ -47,6 +49,7 @@ describe 'Get Device', ->
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
+      @workerFunc
     }
     @jobManager.start done
 
@@ -56,16 +59,12 @@ describe 'Get Device', ->
   describe 'GET /whoami', ->
     context 'when the request is successful', ->
       beforeEach ->
-        @jobManager.do (@request, callback) =>
-          response =
-            metadata:
-              code: 200
-              responseId: @request.metadata.responseId
-            data:
-              uuid: 'new-uuid'
-              something: true
-
-          callback null, response
+        @workerFunc.yields null,
+          metadata:
+            code: 200
+          data:
+            uuid: 'new-uuid'
+            something: true
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port, uuid: 'some-uuid', token: 'some-token'
@@ -73,7 +72,8 @@ describe 'Get Device', ->
           done error
 
       it 'should return a device', ->
-        expect(@request.metadata.toUuid).to.equal 'some-uuid'
-        expect(@request.metadata.auth).to.deep.equal uuid: 'some-uuid', token: 'some-token'
-        expect(@request.metadata.jobType).to.equal 'GetDevice'
+        request = @workerFunc.firstCall.args[0]
+        expect(request.metadata.toUuid).to.equal 'some-uuid'
+        expect(request.metadata.auth).to.deep.equal uuid: 'some-uuid', token: 'some-token'
+        expect(request.metadata.jobType).to.equal 'GetDevice'
         expect(@response).to.deep.equal uuid: 'new-uuid', something: true

@@ -38,6 +38,8 @@ describe 'Register', ->
     @sut.stop => done()
 
   beforeEach (done) ->
+    @workerFunc = sinon.stub()
+
     @jobManager = new JobManagerResponder {
       @namespace
       @redisUri
@@ -47,6 +49,7 @@ describe 'Register', ->
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
+      @workerFunc
     }
     @jobManager.start done
 
@@ -56,16 +59,12 @@ describe 'Register', ->
   describe 'POST /devices', ->
     context 'when the request is successful', ->
       beforeEach ->
-        @jobManager.do (@request, callback) =>
-          response =
-            metadata:
-              code: 201
-              responseId: @request.metadata.responseId
-            data:
-              uuid: 'new-uuid'
-              token: 'new-token'
-
-          callback null, response
+        @workerFunc.yields null,
+          metadata:
+            code: 201
+          data:
+            uuid: 'new-uuid'
+            token: 'new-token'
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port
@@ -73,6 +72,7 @@ describe 'Register', ->
           done error
 
       it 'should return a device', ->
-        expect(JSON.parse @request.rawData).to.deep.equal type: 'boo-yah'
+        request = @workerFunc.firstCall.args[0]
+        expect(JSON.parse request.rawData).to.deep.equal type: 'boo-yah'
         expect(@response).to.deep.equal uuid: 'new-uuid', token: 'new-token'
-        expect(@request.metadata.jobType).to.equal 'RegisterDevice'
+        expect(request.metadata.jobType).to.equal 'RegisterDevice'

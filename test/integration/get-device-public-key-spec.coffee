@@ -38,6 +38,8 @@ describe 'Get Device PublicKey', ->
     @sut.stop => done()
 
   beforeEach (done) ->
+    @workerFunc = sinon.stub()
+
     @jobManager = new JobManagerResponder {
       @namespace
       @redisUri
@@ -47,6 +49,7 @@ describe 'Get Device PublicKey', ->
       jobLogSampleRate: 0
       @requestQueueName
       @responseQueueName
+      @workerFunc
     }
     @jobManager.start done
 
@@ -56,22 +59,19 @@ describe 'Get Device PublicKey', ->
   describe 'GET /devices/some-device/publickey', ->
     context 'when the request is successful', ->
       beforeEach ->
-        @jobManager.do (@request, callback) =>
-          response =
-            metadata:
-              code: 200
-              responseId: @request.metadata.responseId
-            data:
-              publicKey: 'some-key'
-
-          callback null, response
+        @workerFunc.yields null,
+          metadata:
+            code: 200
+          data:
+            publicKey: 'some-key'
 
       beforeEach (done) ->
         meshblu = new MeshbluCoap server: 'localhost', port: @port, uuid: 'some-uuid', token: 'some-token'
         meshblu.devicePublicKey 'new-uuid', (error, @response) =>
           done error
 
-      it 'should return a device', ->
-        expect(@request.metadata.toUuid).to.equal 'new-uuid'
-        expect(@request.metadata.jobType).to.equal 'GetDevicePublicKey'
+      it 'should return the public key', ->
+        request = @workerFunc.firstCall.args[0]
+        expect(request.metadata.toUuid).to.equal 'new-uuid'
+        expect(request.metadata.jobType).to.equal 'GetDevicePublicKey'
         expect(@response).to.deep.equal publicKey: 'some-key'
