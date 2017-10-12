@@ -1,6 +1,6 @@
 {
   "name": "meshblu-core-protocol-adapter-coap",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Meshblu Core Protocol Adapter for CoAP",
   "main": "command.js",
   "scripts": {
